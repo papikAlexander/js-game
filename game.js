@@ -28,6 +28,7 @@ class Actor{
             this.pos = pos;
             this.size = size;
             this.speed = speed;
+            this._type = 'actor';
         }
     }
 
@@ -52,7 +53,7 @@ class Actor{
     }
 
     get type(){
-        return 'actor';
+        return this._type;
     }
 
     isIntersect(actor){
@@ -64,31 +65,79 @@ class Actor{
     }
 }
 
-const items = new Map();
-const player = new Actor();
-items.set('Игрок', player);
-items.set('Первая монета', new Actor(new Vector(10, 10)));
-items.set('Вторая монета', new Actor(new Vector(15, 5)));
+class Level{
+    constructor(grid = [], actors = []){
+        this.grid = grid;
+        this.actors = actors;
+        this.height = grid.length;
+        this.width = grid.reduce((res, count) => (res < count.length) ? count.length : res, 0);
+        this.status = null;
+        this.finishDelay = 1;
+        this.player = actors.find(element => element.type == 'player');
+    }
 
-function position(item) {
-  return ['left', 'top', 'right', 'bottom']
-    .map(side => `${side}: ${item[side]}`)
-    .join(', ');  
+    isFinished(){
+        return (this.status != null && this.finishDelay < 0);
+    }
+
+    actorAt(actor){
+        if(actor == undefined || !(actor instanceof Actor)) throw new Error();
+
+        return  this.actors.find(element => element.isIntersect(actor)) 
+    }
+
+    isObstable(x, y){
+        return (this.grid[y] && this.grid[y][x] && ((this.grid[y][x] === 'wall') || (this.grid[y][x] === 'lava')));
+    }
+
+    obstacleAt(pos, size){
+        if(!(pos instanceof Vector) || !(size instanceof Vector)) throw new Error();
+        
+        const left = Math.floor(pos.x);
+        const top = Math.floor(pos.y);
+        const right = Math.floor(pos.x) + Math.floor(size.x);
+        const bottom = Math.floor(pos.y) + Math.floor(size.y);
+        
+
+        if(bottom > this.height) {
+            return 'lava';
+
+        } else if((left < 0) || (right > this.width) || top < 0){
+            return 'wall';
+
+        } else if(this.isObstable(left, top)){
+            return this.grid[top][left];
+
+        } else if(this.isObstable(left, bottom)){
+            return this.grid[bottom][left];
+
+        } else if(this.isObstable(right, top)){
+            return this.grid[top][right];
+            
+        } else if(this.isObstable(right, bottom)){
+            return this.grid[bottom][right];
+        }
+        
+    }
+
+    removeActor(actor){
+        this.actors.splice(this.actors.findIndex(element => element === actor), 1)   
+    }
+
+    noMoreActors(type){
+        return !this.actors.some(element => (element.type == type));
+    }
+
+    playerTouched(obstacle, actor){
+        if(obstacle === 'lava' || obstacle === 'fireball') {
+            this.status = 'lost';
+        } else if(obstacle === 'coin'){
+            this.removeActor(actor);
+            if(this.noMoreActors('coin')){
+                this.status = 'won';
+            }
+        }
+    }
 }
 
-function movePlayer(x, y) {
-  player.pos = player.pos.plus(new Vector(x, y));
-}
 
-function status(item, title) {
-  console.log(`${title}: ${position(item)}`);
-  if (player.isIntersect(item)) {
-    console.log(`Игрок подобрал ${title}`);
-  }
-}
-
-items.forEach(status);
-movePlayer(10, 10);
-items.forEach(status);
-movePlayer(5, -5);
-items.forEach(status);
