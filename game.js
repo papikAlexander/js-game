@@ -20,7 +20,7 @@ class Vector{
 }
 
 class Actor{
-    constructor(pos = new Vector(0, 0), size = new Vector(1, 1), speed = new Vector(0, 0)){
+    constructor(pos = new Vector(), size = new Vector(1, 1), speed = new Vector()){
         if(!(pos instanceof Vector) || !(size instanceof Vector) || !(speed instanceof Vector)){
             throw new Error();
         } else {
@@ -44,11 +44,11 @@ class Actor{
     }
 
     get top(){
-        return this.pos.y + this.size.y;
+        return this.pos.y;
     }
 
     get bottom(){
-        return this.pos.y;
+        return this.pos.y + this.size.y;
     }
 
     get type(){
@@ -59,19 +59,8 @@ class Actor{
         if(!(actor instanceof Actor)) throw new Error();
         if(actor === this) return false;
 
-
-        if(actor.right > this.left){
-            return (actor.bottom > this.top || actor.top < this.bottom);
-        } else if(actor.left < this.right){
-            return (actor.bottom > this.top || actor.top < this.bottom);
-        } else if(actor.top < this.bottom){
-            return (actor.right > this.left || actor.left < this.right);
-        } else if(actor.bottom > this.top){
-            return (actor.right > this.left || actor.left < this.right);
-        }
-
-        //return ((actor.right > this.left) || (actor.left < this.right) || (actor.bottom > this.top) || (actor.top < this.bottom))
-        
+        return !(actor.left >= this.right || actor.right <= this.left || actor.top >= this.bottom || actor.bottom <= this.top);
+    
     }
 }
 
