@@ -138,6 +138,87 @@ class Level{
             }
         }
     }
+
 }
 
+class Player extends Actor{
+    constructor(location) {
+        super(location, new Vector(0.8, 1.5));
+        this._type = 'player';
+        this.pos.y -= 0.5;
+    }
+}
 
+class LevelParser{
+    constructor(symbols){
+        this.symbols = symbols;
+    }
+
+    actorFromSymbol(symbol){
+        if(!symbol) return undefined;
+        return this.symbols[symbol];
+    }
+
+    obstacleFromSymbol(symbol){
+        switch (symbol) {
+            case 'x':
+                return 'wall';
+            case '!':
+                return 'lava';
+            default:
+                return undefined;
+        }
+    }
+    
+    createGrid(obstacles){
+        return obstacles.map(element => {
+            let arr = [];
+            for (const symbol of element) {
+                arr.push(this.obstacleFromSymbol(symbol));
+            }
+            return arr;    
+        });
+    }
+
+    createActors(entities){
+
+        let mas = entities.map(str => str.split(''));
+        let actors = [];
+
+        mas.forEach((row, y) => {
+            row.forEach((element, x) => {
+                if(this.symbols && this.symbols[element] && typeof this.actorFromSymbol(element) === 'function'){
+                    let actor = new this.symbols[element](new Vector(x, y));
+                    if(actor instanceof Actor){
+                        actors.push(actor);
+                    }
+                    
+                }
+            });
+        });
+        
+        return actors;
+    }
+
+    parse(plan) {
+        return new Level(this.createGrid(plan), this.createActors(plan));
+    }
+
+}
+
+const plan = [
+    ' @ ',
+    'x!x'
+  ];
+  
+  const actorsDict = Object.create(null);
+  actorsDict['@'] = Actor;
+  
+  const parser = new LevelParser(actorsDict);
+  const level = parser.parse(plan);
+  
+  level.grid.forEach((line, y) => {
+    line.forEach((cell, x) => console.log(`(${x}:${y}) ${cell}`));
+  });
+  
+  level.actors.forEach(actor => console.log(`(${actor.pos.x}:${actor.pos.y}) ${actor.type}`));
